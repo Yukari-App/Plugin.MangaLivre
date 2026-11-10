@@ -14,22 +14,17 @@ namespace Yukari.Plugin.MangaLivre;
     ""
 )]
 
-public class MangaLivreSource : IComicSource, IRequiresHttpClient
+public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
 {
     private const int DefaultPageSize = 32;
     private const string SourceLanguage = "pt-BR";
 
-    private static IReadOnlyList<Filter>? _filters;
-    private static IReadOnlyDictionary<string, string>? _languages;
-
-    public IReadOnlyList<Filter> Filters =>
-        _filters ??= [];
-
-    public IReadOnlyDictionary<string, string> Languages =>
-        _languages ??= new Dictionary<string, string> { { "pt-BR", "Português (BR)" } };
     private const string BaseUrl = "https://mangalivre.blog";
 
     private ISharedHttpClient? _httpClient;
+
+    public IReadOnlyList<Filter> Filters => _filters;
+    public IReadOnlyDictionary<string, string> Languages => _languages;
 
     public void SetHttpClient(ISharedHttpClient httpClient) => _httpClient = httpClient;
 
@@ -91,8 +86,6 @@ public class MangaLivreSource : IComicSource, IRequiresHttpClient
         }
         return comics;
     }
-
-
 
     public async Task<IReadOnlyList<Comic>> GetTrendingAsync(
         IReadOnlyDictionary<string, IReadOnlyList<string>> filters,
@@ -358,56 +351,4 @@ public class MangaLivreSource : IComicSource, IRequiresHttpClient
     {
         return ValueTask.CompletedTask;
     }
-
-    private async Task<string?> GetHTMLAsync(string url, CancellationToken ct = default)
-    {
-        using var response = await _httpClient!.SendAsync(
-            new HttpRequestMessage(HttpMethod.Get, url),
-            ct
-        );
-
-        if (response.StatusCode == HttpStatusCode.TooManyRequests)
-            throw new HttpRequestException(
-                "MangaLivre Rate Limit Exceeded. Try again later.",
-                null,
-                HttpStatusCode.TooManyRequests
-            );
-
-        if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound)
-            return default;
-
-        response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadAsStringAsync(ct);
-    }
-
-    private ComicStatus GetComicStatus(string? status) =>
-        status switch
-        {
-            _ => ComicStatus.Unknown,
-        };
-
-    private string? ExtractIdFromUrl(string? url)
-    {
-        if (string.IsNullOrEmpty(url))
-            return null;
-        var parts = url.TrimEnd('/').Split('/');
-        return parts.Length > 0 ? parts[^1] : null;
-    }
-
-    private string? ExtractChapterIdFromUrl(string? url)
-    {
-        if (string.IsNullOrEmpty(url))
-            return null;
-        var parts = url.TrimEnd('/').Split('/');
-        return parts.Length > 0 ? parts[^1] : null;
-    }
-
-    private static string ToQueryString(Dictionary<string, string[]> source) =>
-        string.Join(
-            "&",
-            source.SelectMany(kvp =>
-                kvp.Value.Select(v => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(v)}")
-            )
-        );
 }
