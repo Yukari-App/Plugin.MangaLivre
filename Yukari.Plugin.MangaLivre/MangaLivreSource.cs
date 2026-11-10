@@ -8,7 +8,7 @@ namespace Yukari.Plugin.MangaLivre;
 
 [ComicSourceMetadata(
     "MangaLivre",
-    "1.0.0+core2.5.0",
+    "1.1.0+core2.5.0",
     "https://github.com/Yukari-App/Plugin.MangaLivre/releases",
     "https://mangalivre.blog/favicon.ico",
     ""

@@ -9,8 +9,8 @@
     <AssemblyName>Yukari.Plugin.MangaLivre</AssemblyName>
     <RootNamespace>Yukari.Plugin.MangaLivre</RootNamespace>
 
-    <Version>1.0.0+core2.5.0</Version>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <Version>1.1.0+core2.6.0</Version>
+    <AssemblyVersion>1.1.0</AssemblyVersion>
     <AssemblyFileVersion>$(AssemblyVersion)</AssemblyFileVersion>
     <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -34,6 +34,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Yukari.Core" Version="2.5.0" />
+    <PackageReference Include="Yukari.Core" Version="2.6.0" />
   </ItemGroup>
 </Project>
