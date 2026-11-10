@@ -6,7 +6,7 @@
 
 <div align="center">
   
-![GitHub Repo stars](https://img.shields.io/github/stars/Yukari-App/Yukari.Plugin.MangaLivre?style=for-the-badge&color=535CBA)
+![GitHub Repo stars](https://img.shields.io/github/stars/FrightV/Yukari.Plugin.MangaLivre?style=for-the-badge&color=535CBA)
 ![GitHub last commit](https://img.shields.io/github/last-commit/FrightV/Yukari.Plugin.MangaLivre?style=for-the-badge&color=E6E6E6)
 ![GitHub repo size](https://img.shields.io/github/repo-size/FrightV/Yukari.Plugin.MangaLivre?style=for-the-badge&color=535CBA)
 
