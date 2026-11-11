@@ -1,4 +1,4 @@
-﻿﻿using System.Net;
+﻿using System.Net;
 using HtmlAgilityPack;
 using Yukari.Core.Models;
 using Yukari.Core.Sources;
@@ -8,7 +8,7 @@ namespace Yukari.Plugin.MangaLivre;
 
 [ComicSourceMetadata(
     "MangaLivre",
-    "1.1.0+core2.5.0",
+    "1.1.0+core2.6.0",
     "https://github.com/Yukari-App/Plugin.MangaLivre/releases",
     "https://mangalivre.blog/favicon.ico",
     ""
@@ -241,7 +241,7 @@ public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
 
         var chapters = new List<Chapter>();
 
-        foreach (var node in chapterNodes)
+        foreach (var node in chapterNodes.Reverse())
         {
             string? chapterNumberString =
                 node.GetAttributeValue("data-chapter-number", null);
