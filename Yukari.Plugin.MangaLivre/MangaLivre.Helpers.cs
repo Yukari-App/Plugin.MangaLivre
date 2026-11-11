@@ -8,22 +8,21 @@ public partial class MangaLivreSource
     private static IReadOnlyList<Filter>? _filters =
     [
         new Filter(
-                Key: "status-select",
+                Key: "status",
                 DisplayName: "Status",
                 [
-                    new FilterOption("cancelado", "cancelado", false),
-                    new FilterOption("completo", "completo", false),
-                    new FilterOption("em-andamento", "em-andamento", false),
-                    new FilterOption("em-lancamento", "em-lancamento", false),
-                    new FilterOption("hiato", "hiato", false),
+                    new FilterOption("", "Todos", true),
+                    new FilterOption("concluido", "Concluído", false),
+                    new FilterOption("em-andamento", "Em Andamento", false),
                 ],
-                AllowMultiple: true
+                AllowMultiple: false
             ),
 
             new Filter(
-                Key: "genre-select",
-                DisplayName: "Genre",
+                Key: "genre",
+                DisplayName: "Gênero",
                 [
+                    new FilterOption("", "Todos", true),
                     new FilterOption("4-koma", "4-koma", false),
                     new FilterOption("acao", "acao", false),
                     new FilterOption("action", "action", false),
@@ -166,26 +165,26 @@ public partial class MangaLivreSource
                     new FilterOption("yaoi", "yaoi", false),
                     new FilterOption("zombies", "zombies", false),
                 ],
-                AllowMultiple: true
+                AllowMultiple: false
             ),
 
             new Filter(
-                Key: "rating-select",
-                DisplayName: "rating",
+                Key: "rating_min",
+                DisplayName: "Avaliação mínima",
                 [
-                    new FilterOption("0", "0", false),
-                    new FilterOption("1", "1", false),
-                    new FilterOption("2", "2", false),
-                    new FilterOption("3", "3", false),
-                    new FilterOption("4", "4", false),
-                    new FilterOption("5", "5", false),
-                    new FilterOption("6", "6", false),
-                    new FilterOption("7", "7", false),
-                    new FilterOption("8", "8", false),
-                    new FilterOption("9", "9", false),
-                    new FilterOption("10", "10", false),
+                    new FilterOption("", "Qualquer", true),
+                    new FilterOption("1", "1 ou mais", false),
+                    new FilterOption("2", "2 ou mais", false),
+                    new FilterOption("3", "3 ou mais", false),
+                    new FilterOption("4", "4 ou mais", false),
+                    new FilterOption("5", "5 ou mais", false),
+                    new FilterOption("6", "6 ou mais", false),
+                    new FilterOption("7", "7 ou mais", false),
+                    new FilterOption("8", "8 ou mais", false),
+                    new FilterOption("9", "9 ou mais", false),
+                    new FilterOption("10", "10 ou mais", false),
                 ],
-                AllowMultiple: true
+                AllowMultiple: false
             ),
     ];
     private static readonly IReadOnlyDictionary<string, string>

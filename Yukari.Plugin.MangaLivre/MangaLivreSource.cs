@@ -11,7 +11,7 @@ namespace Yukari.Plugin.MangaLivre;
     "1.1.0+core2.6.0",
     "https://github.com/Yukari-App/Plugin.MangaLivre/releases",
     "https://mangalivre.blog/favicon.ico",
-    ""
+    "Filtros de status e avaliação só são aplicados quando a busca está vazia."
 )]
 
 public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
@@ -35,9 +35,15 @@ public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
         CancellationToken ct = default
     )
     {
+        if (string.IsNullOrWhiteSpace(query))
+            return await GetFilteredComicsAsync(filters, page, ct);
+
+        var queryParams = BuildFilterQueryParams(filters);
+        queryParams["s"] = [query.Trim()];
+
         string searchUrl = page <= 1
-            ? $"{BaseUrl}/?s={Uri.EscapeDataString(query)}"
-            : $"{BaseUrl}/page/{page}/?s={Uri.EscapeDataString(query)}";
+            ? $"{BaseUrl}/?{ToQueryString(queryParams)}"
+            : $"{BaseUrl}/page/{page}/?{ToQueryString(queryParams)}";
 
         var html = await GetHTMLAsync(searchUrl, ct);
         if (html == null)
@@ -46,45 +52,7 @@ public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
-        var mangaCards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'manga-card')]");
-        if (mangaCards is not { Count: > 0 })
-            return Array.Empty<Comic>();
-
-        var comics = new List<Comic>();
-        foreach (var mangaCard in mangaCards)
-        {
-            var linkNode = mangaCard.SelectSingleNode(".//a[contains(@class, 'manga-card-link')]");
-
-            string? comicUrl = linkNode?.GetAttributeValue("href", null);
-            if (string.IsNullOrEmpty(comicUrl))
-                continue;
-
-            string? comicId = ExtractIdFromUrl(comicUrl);
-            if (string.IsNullOrEmpty(comicId))
-                continue;
-
-            var titleNode = mangaCard.SelectSingleNode(".//h3[contains(@class, 'manga-card-title')]");
-            string title = titleNode?.InnerText.Trim() ?? "Unknown Title";
-
-            var imageNode = mangaCard.SelectSingleNode(".//img[contains(@class, 'manga-cover-img')]");
-            string? coverUrl = imageNode?.GetAttributeValue("src", null);
-
-            comics.Add(
-                new Comic(
-                    Id: comicId,
-                    ComicUrl: comicUrl,
-                    Title: title,
-                    Author: null,
-                    Description: null,
-                    Tags: [],
-                    Year: null,
-                    CoverImageUrl: coverUrl,
-                    Langs: ["pt-BR"]
-                )
-            );
-
-        }
-        return comics;
+        return ParseMangaCards(doc);
     }
 
     public async Task<IReadOnlyList<Comic>> GetTrendingAsync(
@@ -93,6 +61,9 @@ public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
         CancellationToken ct = default
     )
     {
+        if (HasActiveFilters(filters))
+            return await GetFilteredComicsAsync(filters, page, ct);
+
         string url = page <= 1
             ? $"{BaseUrl}/"
             : $"{BaseUrl}/?atualizacoes={page}";
@@ -160,6 +131,129 @@ public partial class MangaLivreSource : IComicSource, IRequiresHttpClient
             .DistinctBy(comic => comic.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    private async Task<IReadOnlyList<Comic>> GetFilteredComicsAsync(
+        IReadOnlyDictionary<string, IReadOnlyList<string>> filters,
+        int page,
+        CancellationToken ct
+    )
+    {
+        var queryParams = BuildFilterQueryParams(filters);
+
+        if (page > 1)
+            queryParams["paged"] = [page.ToString()];
+
+        string searchUrl = queryParams.Count > 0
+            ? $"{BaseUrl}/pesquisa/?{ToQueryString(queryParams)}"
+            : $"{BaseUrl}/pesquisa/";
+
+        var html = await GetHTMLAsync(searchUrl, ct);
+        if (html == null)
+            return Array.Empty<Comic>();
+
+        var doc = new HtmlDocument();
+        doc.LoadHtml(html);
+
+        return ParseMangaCards(doc);
+    }
+
+    private IReadOnlyList<Comic> ParseMangaCards(HtmlDocument doc)
+    {
+        var mangaCards = doc.DocumentNode.SelectNodes(
+            "//div[contains(concat(' ', normalize-space(@class), ' '), ' manga-card ')]"
+        );
+
+        if (mangaCards is not { Count: > 0 })
+            return Array.Empty<Comic>();
+
+        var comics = new List<Comic>();
+        foreach (var mangaCard in mangaCards)
+        {
+            var linkNode = mangaCard.SelectSingleNode(
+                ".//a[contains(@class, 'manga-card-link')]"
+            );
+
+            string? comicUrl = linkNode?.GetAttributeValue("href", null);
+            if (string.IsNullOrEmpty(comicUrl))
+                continue;
+
+            string? comicId = ExtractIdFromUrl(comicUrl);
+            if (string.IsNullOrEmpty(comicId))
+                continue;
+
+            var titleNode = mangaCard.SelectSingleNode(
+                ".//h3[contains(@class, 'manga-card-title')]"
+            );
+
+            var imageNode = mangaCard.SelectSingleNode(
+                ".//img[contains(@class, 'manga-cover-img')]"
+            );
+
+            string? coverUrl = imageNode?.GetAttributeValue("src", null);
+
+            string title = titleNode?.InnerText.Trim() ?? string.Empty;
+
+            // The advanced search page (/pesquisa/) renders the page title
+            // ("pesquisa") in every card title, so fall back to the cover alt text.
+            if (
+                string.IsNullOrWhiteSpace(title)
+                || title.Equals("pesquisa", StringComparison.OrdinalIgnoreCase)
+            )
+                title = imageNode?.GetAttributeValue("alt", null)?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(title))
+                title = GetTitleFromId(comicId);
+
+            comics.Add(
+                new Comic(
+                    Id: comicId,
+                    ComicUrl: comicUrl,
+                    Title: title,
+                    Author: null,
+                    Description: null,
+                    Tags: [],
+                    Year: null,
+                    CoverImageUrl: coverUrl,
+                    Langs: ["pt-BR"]
+                )
+            );
+        }
+
+        return comics;
+    }
+
+    private static Dictionary<string, string[]> BuildFilterQueryParams(
+        IReadOnlyDictionary<string, IReadOnlyList<string>> filters
+    )
+    {
+        var queryParams = new Dictionary<string, string[]>();
+
+        foreach (var kvp in filters)
+        {
+            var values = kvp.Value
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+
+            if (values.Length > 0)
+                queryParams[kvp.Key] = values;
+        }
+
+        return queryParams;
+    }
+
+    private static bool HasActiveFilters(
+        IReadOnlyDictionary<string, IReadOnlyList<string>> filters
+    ) =>
+        filters.Values.Any(values =>
+            values.Any(value => !string.IsNullOrWhiteSpace(value))
+        );
+
+    private static string GetTitleFromId(string id) =>
+        string.Join(
+            ' ',
+            id.Split('-', StringSplitOptions.RemoveEmptyEntries)
+                .Select(word => char.ToUpperInvariant(word[0]) + word[1..])
+        );
 
 
 
